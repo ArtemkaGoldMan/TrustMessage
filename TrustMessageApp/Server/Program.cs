@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.Services.Interfaces;
+using Server.Services.Implementations;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net.WebSockets;
 
@@ -8,6 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure database connection
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Add controllers
 builder.Services.AddControllers();
