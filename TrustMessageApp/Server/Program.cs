@@ -3,6 +3,10 @@ using Server.Data;
 using Server.Services.Interfaces;
 using Server.Services.Implementations;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Server.Validators;
+using AspNetCoreRateLimit;
 using System.Net.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,8 +19,32 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-// Add controllers
-builder.Services.AddControllers();
+// Add FluentValidation
+builder.Services.AddControllers()
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<RegisterRequestValidator>());
+
+// Configure rate limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(options =>
+{
+    options.GeneralRules = new List<RateLimitRule>
+    {
+        new RateLimitRule
+        {
+            Endpoint = "POST:/api/auth/login",
+            Limit = 5,
+            Period = "1m"
+        },
+        new RateLimitRule
+        {
+            Endpoint = "*",
+            Limit = 100,
+            Period = "10m"
+        }
+    };
+});
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddInMemoryRateLimiting();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -57,6 +85,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
+app.UseIpRateLimiting();
 
 // Enable WebSockets
 app.UseWebSockets();
