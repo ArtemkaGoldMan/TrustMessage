@@ -43,8 +43,38 @@ namespace Server.Services.Implementations
             if (user == null)
                 return false;
 
-            return PBKDF2Hasher.VerifyPassword(request.Password, user.PasswordHash);
+            // Check if user is locked out
+            if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
+            {
+                throw new Exception("Your account is locked. Try again later.");
+            }
+
+            if (!PBKDF2Hasher.VerifyPassword(request.Password, user.PasswordHash))
+            {
+                user.FailedLoginAttempts++;
+                if (user.FailedLoginAttempts >= 5)
+                {
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                    await _context.SaveChangesAsync();
+                    throw new Exception("Your account has been locked due to multiple failed login attempts. Please try again later.");
+                }
+                else
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1)); // Small delay
+                }
+
+                await _context.SaveChangesAsync();
+                return false;
+            }
+
+            // Reset failed attempts on successful login
+            user.FailedLoginAttempts = 0;
+            user.LockoutEnd = null;
+            await _context.SaveChangesAsync();
+
+            return true;
         }
+
 
         public async Task<bool> ValidateTwoFactorCodeAsync(string username, string code)
         {

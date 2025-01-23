@@ -21,9 +21,12 @@ namespace Server.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDTO request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var qrCodeUri = await _authService.RegisterAsync(request);
             if (qrCodeUri == null)
-                return BadRequest("Username already exists");
+                return BadRequest("Registration failed");
 
             return Ok(new { message = "Registration successful", qrCodeUri });
         }
@@ -31,22 +34,43 @@ namespace Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
         {
-            if (!await _authService.ValidateUserAsync(request))
-                return Unauthorized("Invalid credentials");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            if (!await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode))
-                return Unauthorized("Invalid 2FA code");
+            try
+            {
+                bool userValid = await _authService.ValidateUserAsync(request);
+                bool twoFactorValid = await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode);
 
-            return Ok(new { message = "Login successful" });
+                if (!userValid || !twoFactorValid)
+                {
+                    return Unauthorized("Invalid login attempt");
+                }
+
+                return Ok(new { message = "Login successful" });
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("locked"))
+                {
+                    return Unauthorized("Your account is locked. Please try again later.");
+                }
+                return Unauthorized("Invalid login attempt");
+            }
         }
 
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
         {
-            if (!await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode))
-                return Unauthorized("Invalid 2FA code");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            if (!await _userService.UpdatePasswordAsync(request.Username, request.NewPassword))
+            bool twoFactorValid = await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode);
+            if (!twoFactorValid)
+                return Unauthorized("Invalid request");
+
+            bool passwordChanged = await _userService.UpdatePasswordAsync(request.Username, request.NewPassword);
+            if (!passwordChanged)
                 return NotFound("User not found");
 
             return Ok(new { message = "Password changed successfully" });
