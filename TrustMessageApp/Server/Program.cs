@@ -8,6 +8,9 @@ using FluentValidation.AspNetCore;
 using Server.Validators;
 using AspNetCoreRateLimit;
 using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using BaseLibrary.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 
 // Add FluentValidation
 builder.Services.AddControllers()
@@ -87,13 +91,27 @@ app.UseAuthorization();
 app.UseSession();
 app.UseIpRateLimiting();
 
+// WebSocket connection security check
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/ws/messages") && !context.User.Identity.IsAuthenticated)
+    {
+        context.Response.StatusCode = 401;
+        return;
+    }
+    await next();
+});
+
 // Enable WebSockets
 app.UseWebSockets();
-app.Map("/ws", async context =>
+app.Map("/ws/messages", async context =>
 {
-    if (context.WebSockets.IsWebSocketRequest)
+    if (context.WebSockets.IsWebSocketRequest && context.User.Identity.IsAuthenticated)
     {
         using var ws = await context.WebSockets.AcceptWebSocketAsync();
+        var messageService = context.RequestServices.GetRequiredService<IMessageService>();
+        var userService = context.RequestServices.GetRequiredService<IUserService>();
+
         var buffer = new byte[1024 * 4];
 
         while (true)
@@ -105,12 +123,22 @@ app.Map("/ws", async context =>
                 break;
             }
 
-            var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
-            Console.WriteLine($"Received: {message}");
+            var messageContent = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            var user = await userService.GetUserByUsernameAsync(context.User.Identity.Name);
 
-            // Echo message back to the client
-            var response = $"Server received: {message}";
-            await ws.SendAsync(System.Text.Encoding.UTF8.GetBytes(response), WebSocketMessageType.Text, true, CancellationToken.None);
+            if (user == null)
+            {
+                context.Response.StatusCode = 401;
+                return;
+            }
+
+            // Create the message
+            var messageDto = new CreateMessageDTO { Content = messageContent };
+            var newMessage = await messageService.CreateMessageAsync(user.Id, messageDto);
+
+            // Send the verified message to all clients
+            var response = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(newMessage));
+            await ws.SendAsync(response, WebSocketMessageType.Text, true, CancellationToken.None);
         }
     }
     else
