@@ -1,0 +1,41 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using WebClient.Services
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            <AuthorizeView>
+                <Authorized>
+                    <p>Welcome, <strong>@context.User.Identity?.Name</strong></p>
+                    <button class="btn btn-danger" @onclick="Logout">Logout</button>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="btn btn-primary" href="/login">Login</a>
+                    <a class="btn btn-secondary ms-2" href="/register">Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    [Inject] public AuthService AuthService { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+    }
+}

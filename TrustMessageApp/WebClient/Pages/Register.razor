@@ -1,0 +1,49 @@
+﻿@page "/register"
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@using WebClient.Services
+@using BaseLibrary.DTOs
+
+<h3>Register</h3>
+
+<EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div>
+        <label>Username:</label>
+        <InputText @bind-Value="registerModel.Username" />
+    </div>
+    <div>
+        <label>Email:</label>
+        <InputText @bind-Value="registerModel.Email" />
+    </div>
+    <div>
+        <label>Password:</label>
+        <InputText @bind-Value="registerModel.Password" type="password" />
+    </div>
+    <button type="submit">Register</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <p style="color:green">@successMessage</p>
+}
+
+@code {
+    private RegisterRequestDTO registerModel = new();
+    private string successMessage = string.Empty;
+
+    private async Task HandleRegister()
+    {
+        var success = await AuthService.RegisterAsync(registerModel);
+        if (success)
+        {
+            successMessage = "Registration successful! You can now log in.";
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            successMessage = "Registration failed.";
+        }
+    }
+}

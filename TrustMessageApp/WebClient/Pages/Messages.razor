@@ -1,0 +1,15 @@
+﻿@page "/messages"
+@inject NavigationManager Navigation
+
+<h3>Messages</h3>
+
+<p>Welcome to the messages page!</p>
+
+<button @onclick="GoHome">Go Home</button>
+
+@code {
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

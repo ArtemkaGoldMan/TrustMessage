@@ -14,6 +14,18 @@ using BaseLibrary.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowBlazorClient", policy =>
+    {
+        policy.WithOrigins("https://localhost:7068")  // Blazor client URL
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 // Configure database connection
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -72,6 +84,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/api/auth/denied";
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
     });
 
 builder.Services.AddAuthorization();
@@ -85,18 +98,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowBlazorClient");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
 app.UseIpRateLimiting();
 
-// WebSocket connection security check
+// WebSocket connection security check middleware
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/ws/messages") && !context.User.Identity.IsAuthenticated)
     {
-        context.Response.StatusCode = 401;
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsync("Unauthorized access.");
         return;
     }
     await next();
@@ -128,7 +143,8 @@ app.Map("/ws/messages", async context =>
 
             if (user == null)
             {
-                context.Response.StatusCode = 401;
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("User not found.");
                 return;
             }
 
@@ -136,14 +152,16 @@ app.Map("/ws/messages", async context =>
             var messageDto = new CreateMessageDTO { Content = messageContent };
             var newMessage = await messageService.CreateMessageAsync(user.Id, messageDto);
 
-            // Send the verified message to all clients
-            var response = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(newMessage));
-            await ws.SendAsync(response, WebSocketMessageType.Text, true, CancellationToken.None);
+            // Send the verified message to the client
+            var responseMessage = JsonSerializer.Serialize(newMessage);
+            var responseBytes = Encoding.UTF8.GetBytes(responseMessage);
+            await ws.SendAsync(responseBytes, WebSocketMessageType.Text, true, CancellationToken.None);
         }
     }
     else
     {
-        context.Response.StatusCode = 400;
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsync("Invalid WebSocket request.");
     }
 });
 
