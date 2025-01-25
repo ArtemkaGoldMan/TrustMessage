@@ -144,15 +144,12 @@ app.Map("/ws/messages", async context =>
             if (user == null)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync("User not found.");
                 return;
             }
 
-            // Create the message
             var messageDto = new CreateMessageDTO { Content = messageContent };
             var newMessage = await messageService.CreateMessageAsync(user.Id, messageDto);
 
-            // Send the verified message to the client
             var responseMessage = JsonSerializer.Serialize(newMessage);
             var responseBytes = Encoding.UTF8.GetBytes(responseMessage);
             await ws.SendAsync(responseBytes, WebSocketMessageType.Text, true, CancellationToken.None);
@@ -164,6 +161,7 @@ app.Map("/ws/messages", async context =>
         await context.Response.WriteAsync("Invalid WebSocket request.");
     }
 });
+
 
 app.MapControllers();
 app.Run();
