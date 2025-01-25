@@ -27,15 +27,28 @@ namespace WebClient.Services
             return false;
         }
 
-        public async Task<bool> RegisterAsync(RegisterRequestDTO registerRequest)
+        public async Task<string?> RegisterAsync(RegisterRequestDTO registerRequest)
         {
             var response = await _httpClient.PostAsJsonAsync("auth/register", registerRequest);
-            return response.IsSuccessStatusCode;
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<RegisterResponseDTO>();
+                return result?.QrCodeUri; // Return the QR code URI
+            }
+            return null;
         }
 
         public async Task LogoutAsync()
         {
             await _authStateProvider.SetUnauthenticatedUser();
         }
+
+    }
+
+    public class RegisterResponseDTO
+    {
+        public string Message { get; set; }
+        public string QrCodeUri { get; set; }
     }
 }

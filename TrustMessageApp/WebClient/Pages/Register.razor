@@ -1,7 +1,6 @@
 ﻿@page "/register"
 @inject AuthService AuthService
 @inject NavigationManager Navigation
-@using WebClient.Services
 @using BaseLibrary.DTOs
 
 <h3>Register</h3>
@@ -9,6 +8,7 @@
 <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
     <DataAnnotationsValidator />
     <ValidationSummary />
+
     <div>
         <label>Username:</label>
         <InputText @bind-Value="registerModel.Username" />
@@ -21,29 +21,43 @@
         <label>Password:</label>
         <InputText @bind-Value="registerModel.Password" type="password" />
     </div>
+
     <button type="submit">Register</button>
 </EditForm>
 
-@if (!string.IsNullOrEmpty(successMessage))
+@if (!string.IsNullOrEmpty(qrCodeUri))
 {
-    <p style="color:green">@successMessage</p>
+    <h4>Scan this QR code with your authentication app:</h4>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?data=@qrCodeUri&size=150x150" alt="2FA QR Code" />
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color:red">@errorMessage</p>
 }
 
 @code {
     private RegisterRequestDTO registerModel = new();
-    private string successMessage = string.Empty;
+    private string qrCodeUri = string.Empty;
+    private string errorMessage = string.Empty;
 
     private async Task HandleRegister()
     {
-        var success = await AuthService.RegisterAsync(registerModel);
-        if (success)
+        try
         {
-            successMessage = "Registration successful! You can now log in.";
-            Navigation.NavigateTo("/login");
+            var qrUri = await AuthService.RegisterAsync(registerModel);
+            if (qrUri != null)
+            {
+                qrCodeUri = qrUri;
+            }
+            else
+            {
+                errorMessage = "Registration failed. Username might already be taken.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            successMessage = "Registration failed.";
+            errorMessage = $"Error: {ex.Message}";
         }
     }
 }
