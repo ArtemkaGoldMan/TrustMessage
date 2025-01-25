@@ -30,7 +30,8 @@ namespace Server.Data
                 entity.Property(m => m.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.HasOne(m => m.User)
                       .WithMany()
-                      .HasForeignKey(m => m.UserId);
+                      .HasForeignKey(m => m.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
