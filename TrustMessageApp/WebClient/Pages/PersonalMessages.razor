@@ -1,0 +1,42 @@
+﻿@page "/my-messages"
+@using BaseLibrary.DTOs
+@inject MessageService MessageService
+
+<h3>Your Messages</h3>
+
+<ul>
+    @foreach (var message in messages)
+    {
+        <li>
+            <strong>@message.Username:</strong> @message.Content
+            <span>(@message.CreatedAt.ToString("g"))</span>
+            @if (message.IsVerified)
+            {
+                <span style="color: green;">✔ Verified</span>
+            }
+            else
+            {
+                <span style="color: red;">✘ Not Verified</span>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    private List<MessageDTO> messages = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        MessageService.OnMessageReceived += message =>
+        {
+            messages.Add(message);
+            StateHasChanged();
+        };
+        await MessageService.ConnectAsync();
+    }
+
+    public void Dispose()
+    {
+        MessageService.DisconnectAsync();
+    }
+}

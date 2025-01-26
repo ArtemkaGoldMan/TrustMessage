@@ -26,6 +26,7 @@ builder.Services.AddScoped(sp =>
 // Add authentication services
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<MessageService>();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
 

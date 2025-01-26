@@ -63,13 +63,13 @@ namespace Server.Services.Implementations
 
                 if (user.FailedLoginAttempts >= 5)
                 {
-                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15); // Lock the user for 15 minutes
                     await _context.SaveChangesAsync();
                     throw new Exception("Your account has been locked due to multiple failed login attempts. Please try again later.");
                 }
                 else
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(1)); // Small delay to mitigate brute-force attacks
+                    await Task.Delay(TimeSpan.FromSeconds(2)); // Small delay to mitigate brute-force attacks
                 }
 
                 await _context.SaveChangesAsync();

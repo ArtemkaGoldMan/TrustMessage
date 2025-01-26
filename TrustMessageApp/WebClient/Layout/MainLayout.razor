@@ -9,10 +9,6 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
             <AuthorizeView>
                 <Authorized>
                     <p>Welcome, <strong>@context.User.Identity?.Name</strong></p>
@@ -23,6 +19,9 @@
                     <a class="btn btn-secondary ms-2" href="/register">Register</a>
                 </NotAuthorized>
             </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
 
             @Body
         </article>

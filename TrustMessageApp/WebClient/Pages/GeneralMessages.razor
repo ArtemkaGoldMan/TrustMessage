@@ -1,0 +1,55 @@
+﻿@page "/messages"
+@using BaseLibrary.DTOs
+@inject MessageService MessageService
+
+<h3>General Messages</h3>
+
+<input @bind="newMessage" placeholder="Type a message..." />
+<button @onclick="SendMessage">Send</button>
+
+<ul>
+    @foreach (var message in messages)
+    {
+        <li>
+            <strong>@message.Username:</strong> @message.Content
+            <span>(@message.CreatedAt.ToString("g"))</span>
+            @if (message.IsVerified)
+            {
+                <span style="color: green;">✔ Verified</span>
+            }
+            else
+            {
+                <span style="color: red;">✘ Not Verified</span>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    private List<MessageDTO> messages = new();
+    private string newMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        MessageService.OnMessageReceived += message =>
+        {
+            messages.Add(message);
+            StateHasChanged();
+        };
+        await MessageService.ConnectAsync();
+    }
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrEmpty(newMessage))
+        {
+            await MessageService.SendMessageAsync(newMessage);
+            newMessage = "";
+        }
+    }
+
+    public void Dispose()
+    {
+        MessageService.DisconnectAsync();
+    }
+}
