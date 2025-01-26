@@ -3,14 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Security;
 using Server.Services.Interfaces;
+using System;
 
 namespace Server.Services.Implementations
 {
     public class AuthService : IAuthService
     {
-        private readonly AppDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public AuthService(AppDbContext context)
+        public AuthService(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -20,6 +21,12 @@ namespace Server.Services.Implementations
             if (await _context.Users.AnyAsync(u => u.Username == request.Username))
                 return null;
 
+            // Generate RSA key pair using KeyManager
+            var (publicKey, privateKey) = KeyManager.GenerateRsaKeyPair();
+
+            // Encrypt the private key using the user's password
+            string encryptedPrivateKey = KeyManager.EncryptPrivateKey(privateKey, request.Password);
+
             var hashedPassword = PBKDF2Hasher.HashPassword(request.Password);
             var secretKey = TwoFactorAuthService.GenerateSecretKey();
 
@@ -28,6 +35,8 @@ namespace Server.Services.Implementations
                 Username = request.Username,
                 Email = request.Email,
                 PasswordHash = hashedPassword,
+                PublicKey = publicKey,
+                PrivateKey = encryptedPrivateKey, // Store the encrypted private key
                 TwoFactorSecret = secretKey
             };
 
@@ -63,13 +72,13 @@ namespace Server.Services.Implementations
 
                 if (user.FailedLoginAttempts >= 5)
                 {
-                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15); // Lock the user for 15 minutes
                     await _context.SaveChangesAsync();
                     throw new Exception("Your account has been locked due to multiple failed login attempts. Please try again later.");
                 }
                 else
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(1)); // Small delay to mitigate brute-force attacks
+                    await Task.Delay(TimeSpan.FromSeconds(2)); // Small delay to mitigate brute-force attacks
                 }
 
                 await _context.SaveChangesAsync();

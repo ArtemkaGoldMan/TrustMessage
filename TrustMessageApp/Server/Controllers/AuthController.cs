@@ -1,7 +1,9 @@
 ﻿using BaseLibrary.DTOs;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace Server.Controllers
 {
@@ -10,12 +12,10 @@ namespace Server.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IUserService _userService;
 
-        public AuthController(IAuthService authService, IUserService userService)
+        public AuthController(IAuthService authService)
         {
             _authService = authService;
-            _userService = userService;
         }
 
         [HttpPost("register")]
@@ -31,9 +31,16 @@ namespace Server.Controllers
             return Ok(new { message = "Registration successful", qrCodeUri });
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
+        [HttpGet("login")]
+        public async Task<IActionResult> LoginForSwagger([FromQuery] string username, [FromQuery] string password, [FromQuery] string twoFactorCode)
         {
+            var request = new LoginRequestDTO
+            {
+                Username = username,
+                Password = password,
+                TwoFactorCode = twoFactorCode
+            };
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -47,6 +54,24 @@ namespace Server.Controllers
                     return Unauthorized("Invalid login attempt");
                 }
 
+                // Create the authentication cookie
+                var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, request.Username)
+        };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
+                };
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
                 return Ok(new { message = "Login successful" });
             }
             catch (Exception ex)
@@ -59,21 +84,12 @@ namespace Server.Controllers
             }
         }
 
-        [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            bool twoFactorValid = await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode);
-            if (!twoFactorValid)
-                return Unauthorized("Invalid request");
-
-            bool passwordChanged = await _userService.UpdatePasswordAsync(request.Username, request.NewPassword);
-            if (!passwordChanged)
-                return NotFound("User not found");
-
-            return Ok(new { message = "Password changed successfully" });
+            // Destroy the authentication cookie
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Ok(new { message = "Logout successful" });
         }
     }
 }

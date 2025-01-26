@@ -3,14 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Security;
 using Server.Services.Interfaces;
+using System;
 
 namespace Server.Services.Implementations
 {
     public class UserService : IUserService
     {
-        private readonly AppDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public UserService(AppDbContext context)
+        public UserService(ApplicationDbContext context)
         {
             _context = context;
         }

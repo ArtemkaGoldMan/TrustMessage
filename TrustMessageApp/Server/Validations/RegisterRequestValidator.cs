@@ -2,7 +2,7 @@
 using FluentValidation;
 using Server.Security;
 
-namespace Server.Validators
+namespace Server.Validations
 {
     public class RegisterRequestValidator : AbstractValidator<RegisterRequestDTO>
     {

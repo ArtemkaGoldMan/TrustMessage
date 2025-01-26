@@ -1,4 +1,5 @@
 ﻿using OtpNet;
+
 namespace Server.Security
 {
     public class TwoFactorAuthService
