@@ -1,36 +1,45 @@
-﻿using BaseLibrary.DTOs;
-using Microsoft.AspNetCore.Components.Authorization;
-using System.Net.Http.Json;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
-namespace WebClient.Services
+public class CustomAuthStateProvider : AuthenticationStateProvider
 {
-    public class CustomAuthStateProvider : AuthenticationStateProvider
+    private ClaimsPrincipal _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+    private readonly HttpClient _httpClient;
+
+    public CustomAuthStateProvider(HttpClient httpClient)
     {
-        private ClaimsPrincipal _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+        _httpClient = httpClient;
+    }
 
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        return Task.FromResult(new AuthenticationState(_currentUser));
+    }
+
+    public Task SetAuthenticatedUser(string username)
+    {
+        var identity = new ClaimsIdentity(new[]
         {
-            return Task.FromResult(new AuthenticationState(_currentUser));
-        }
+            new Claim(ClaimTypes.Name, username)
+        }, "apiauth");
 
-        public Task SetAuthenticatedUser(string username)
-        {
-            var identity = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, username)
-            }, "apiauth");
+        _currentUser = new ClaimsPrincipal(identity);
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
 
-            _currentUser = new ClaimsPrincipal(identity);
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-            return Task.CompletedTask;
-        }
+        // Set the authentication cookie
+        _httpClient.DefaultRequestHeaders.Add("Cookie", "HttpOnly; Secure");
 
-        public Task SetUnauthenticatedUser()
-        {
-            _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
+
+    public Task SetUnauthenticatedUser()
+    {
+        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+
+        // Clear the authentication cookie
+        _httpClient.DefaultRequestHeaders.Remove("Cookie");
+
+        return Task.CompletedTask;
     }
 }

@@ -20,6 +20,13 @@ namespace WebClient.Services
 
             if (response.IsSuccessStatusCode)
             {
+                // Set the authentication cookie
+                var cookies = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
+                if (!string.IsNullOrEmpty(cookies))
+                {
+                    _httpClient.DefaultRequestHeaders.Add("Cookie", cookies);
+                }
+
                 await _authStateProvider.SetAuthenticatedUser(loginRequest.Username);
                 return true;
             }

@@ -7,23 +7,30 @@
 <input @bind="newMessage" placeholder="Type a message..." />
 <button @onclick="SendMessage">Send</button>
 
-<ul>
-    @foreach (var message in messages)
-    {
-        <li>
-            <strong>@message.Username:</strong> @message.Content
-            <span>(@message.CreatedAt.ToString("g"))</span>
-            @if (message.IsVerified)
-            {
-                <span style="color: green;">✔ Verified</span>
-            }
-            else
-            {
-                <span style="color: red;">✘ Not Verified</span>
-            }
-        </li>
-    }
-</ul>
+@if (messages.Count == 0)
+{
+    <p>No messages yet.</p>
+}
+else
+{
+    <ul>
+        @foreach (var message in messages)
+        {
+            <li>
+                <strong>@message.Username:</strong> @message.Content
+                <span>(@message.CreatedAt.ToString("g"))</span>
+                @if (message.IsVerified)
+                {
+                    <span style="color: green;">✔ Verified</span>
+                }
+                else
+                {
+                    <span style="color: red;">✘ Not Verified</span>
+                }
+            </li>
+        }
+    </ul>
+}
 
 @code {
     private List<MessageDTO> messages = new();
@@ -36,6 +43,10 @@
             messages.Add(message);
             StateHasChanged();
         };
+
+        MessageService.OnError += error => Console.WriteLine($"Error: {error}");
+        MessageService.OnDisconnected += () => Console.WriteLine("WebSocket disconnected");
+
         await MessageService.ConnectAsync();
     }
 
@@ -48,8 +59,8 @@
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        MessageService.DisconnectAsync();
+        await MessageService.DisconnectAsync();
     }
 }

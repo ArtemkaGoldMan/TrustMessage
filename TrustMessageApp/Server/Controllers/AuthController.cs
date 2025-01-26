@@ -1,7 +1,10 @@
 ﻿using BaseLibrary.DTOs;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace Server.Controllers
 {
@@ -46,6 +49,24 @@ namespace Server.Controllers
                 {
                     return Unauthorized("Invalid login attempt");
                 }
+
+                // Create the authentication cookie
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, request.Username)
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true, // Make the cookie persistent
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30) // Set cookie expiration
+                };
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
 
                 return Ok(new { message = "Login successful" });
             }
