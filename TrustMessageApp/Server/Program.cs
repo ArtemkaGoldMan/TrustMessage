@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Server.Data;
+using Server.Hubs;
 using Server.Services.Implementations;
 using Server.Services.Interfaces;
 using Server.Validations;
+using Server.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +55,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddSignalR();
+
 // Add in-memory distributed cache (for development only)
 builder.Services.AddDistributedMemoryCache();
 
@@ -77,6 +82,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/api/auth/access-denied"; // Redirect if access is denied
     });
 
+// Add this to your services configuration
+builder.Services.AddSingleton<KeyManager>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -89,6 +97,9 @@ if (app.Environment.IsDevelopment())
         c.ConfigObject.AdditionalItems["persistAuthorization"] = true; // Persist authorization across Swagger sessions
     });
 }
+
+// Enable SignalR
+app.MapHub<MessageHub>("/messageHub");
 
 app.UseHttpsRedirection();
 

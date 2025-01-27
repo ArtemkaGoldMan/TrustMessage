@@ -10,10 +10,12 @@ namespace Server.Services.Implementations
     public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
+        private readonly KeyManager _keyManager;
 
-        public AuthService(ApplicationDbContext context)
+        public AuthService(ApplicationDbContext context, KeyManager keyManager)
         {
             _context = context;
+            _keyManager = keyManager;
         }
 
         public async Task<string?> RegisterAsync(RegisterRequestDTO request)
@@ -22,10 +24,10 @@ namespace Server.Services.Implementations
                 return null;
 
             // Generate RSA key pair using KeyManager
-            var (publicKey, privateKey) = KeyManager.GenerateRsaKeyPair();
+            var (publicKey, privateKey) = _keyManager.GenerateRsaKeyPair();
 
             // Encrypt the private key using the user's password
-            string encryptedPrivateKey = KeyManager.EncryptPrivateKey(privateKey, request.Password);
+            string encryptedPrivateKey = _keyManager.EncryptPrivateKey(privateKey, request.Password);
 
             var hashedPassword = PBKDF2Hasher.HashPassword(request.Password);
             var secretKey = TwoFactorAuthService.GenerateSecretKey();
@@ -49,8 +51,7 @@ namespace Server.Services.Implementations
         public async Task<bool> ValidateUserAsync(LoginRequestDTO request)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
-            if (user == null)
-                return false;
+            if (user == null) return false;
 
             // Check if the user is currently locked out
             if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
