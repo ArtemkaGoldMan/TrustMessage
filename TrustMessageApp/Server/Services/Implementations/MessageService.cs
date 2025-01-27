@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using BaseLibrary.DTOs;
+﻿using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
@@ -65,15 +61,19 @@ namespace Server.Services.Implementations
                 throw new Exception("Invalid password");
             }
 
+            // Sanitize the message content
+            var sanitizedContent = MessageSanitizer.Sanitize(request.Content);
+
             var decryptedPrivateKey = _keyManager.DecryptPrivateKey(user.PrivateKey, request.Password);
-            var signature = _keyManager.SignData(request.Content, decryptedPrivateKey);
+            var signature = _keyManager.SignData(sanitizedContent, decryptedPrivateKey);
 
             var message = new Message
             {
                 UserId = user.Id,
-                Content = request.Content,
+                Content = sanitizedContent,
                 Signature = signature,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ImageUrl = request.ImageUrl
             };
 
             _context.Messages.Add(message);

@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<RegisterRequestValidator>());
 
+// Add rate limiting services
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+
+// Add other services...
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure Swagger to support cookie authentication
@@ -98,10 +108,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Enable rate limiting middleware
+app.UseIpRateLimiting();
+
 // Enable SignalR
 app.MapHub<MessageHub>("/messageHub");
 
-app.UseHttpsRedirection();
+// Serve static files from wwwroot
+app.UseStaticFiles();
 
 // Enable session middleware
 app.UseSession();

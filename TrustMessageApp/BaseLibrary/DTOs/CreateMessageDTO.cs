@@ -14,5 +14,7 @@ namespace BaseLibrary.DTOs
         
         [Required]
         public string Password { get; set; } = string.Empty;
+
+        public string? ImageUrl { get; set; } // Optional image URL
     }
 }
