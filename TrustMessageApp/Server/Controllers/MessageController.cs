@@ -51,32 +51,5 @@ namespace Server.Controllers
 
             return Ok(message);
         }
-
-        [HttpPost("upload-image")]
-        public async Task<IActionResult> UploadImage(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-                return BadRequest("No file uploaded.");
-
-            // Ensure the wwwroot/images directory exists
-            var imagesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-            if (!Directory.Exists(imagesDirectory))
-            {
-                Directory.CreateDirectory(imagesDirectory);
-            }
-
-            // Save the file to wwwroot/images
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-            var filePath = Path.Combine(imagesDirectory, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            // Return the URL of the uploaded image
-            var imageUrl = $"/images/{fileName}";
-            return Ok(new { imageUrl });
-        }
     }
 }

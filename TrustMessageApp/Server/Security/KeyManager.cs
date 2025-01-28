@@ -76,15 +76,5 @@ namespace Server.Security
             
             return rsa.VerifyData(dataBytes, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
-
-        private (string Key, string IV) GetKeyConfig()
-        {
-            var key = _configuration["KeyManagement:Key"] ?? 
-                throw new InvalidOperationException("Master key not configured");
-            var iv = _configuration["KeyManagement:IV"] ?? 
-                throw new InvalidOperationException("Master IV not configured");
-            
-            return (key, iv);
-        }
     }
 }

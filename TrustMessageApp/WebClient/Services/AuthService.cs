@@ -27,7 +27,7 @@ namespace WebClient.Services
         {
             var response = await _httpClient.GetAsync(
                 $"api/auth/login?username={request.Username}&password={request.Password}&twoFactorCode={request.TwoFactorCode}");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return true;

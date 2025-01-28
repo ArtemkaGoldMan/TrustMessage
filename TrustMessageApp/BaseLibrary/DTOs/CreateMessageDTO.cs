@@ -10,11 +10,10 @@ namespace BaseLibrary.DTOs
     public class CreateMessageDTO
     {
         [Required]
+        [StringLength(1000, ErrorMessage = "Message cannot be longer than 1000 characters.")]
         public string Content { get; set; } = string.Empty;
         
         [Required]
         public string Password { get; set; } = string.Empty;
-
-        public string? ImageUrl { get; set; } // Optional image URL
     }
 }

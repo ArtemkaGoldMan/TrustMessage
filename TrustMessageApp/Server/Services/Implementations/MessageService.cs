@@ -72,8 +72,7 @@ namespace Server.Services.Implementations
                 UserId = user.Id,
                 Content = sanitizedContent,
                 Signature = signature,
-                CreatedAt = DateTime.UtcNow,
-                ImageUrl = request.ImageUrl
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Messages.Add(message);
