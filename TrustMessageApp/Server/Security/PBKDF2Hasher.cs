@@ -4,9 +4,9 @@ namespace Server.Security
 {
     public class PBKDF2Hasher
     {
-        private const int SaltSize = 16; // 16 bytes for salt
-        private const int HashSize = 32; // 32 bytes for hash
-        private const int Iterations = 100000; // Number of iterations for PBKDF2
+        private const int SaltSize = 16; 
+        private const int HashSize = 32; 
+        private const int Iterations = 100000; 
 
         public static string HashPassword(string password)
         {

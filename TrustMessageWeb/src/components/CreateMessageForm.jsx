@@ -24,7 +24,16 @@ export default function CreateMessageForm({ onMessageCreated }) {
         onMessageCreated();
       }
     } catch (err) {
-      setError(err.message);
+      console.log('Message creation error:', err);
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => messages)
+          .flat()
+          .join('\n');
+        setError(errorMessages);
+      } else {
+        setError(err.response?.data?.message || 'Failed to create message');
+      }
     }
   };
 

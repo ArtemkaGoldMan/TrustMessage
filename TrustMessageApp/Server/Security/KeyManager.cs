@@ -13,7 +13,6 @@ namespace Server.Security
             _configuration = configuration;
         }
 
-        // Generate RSA key pair
         public (string PublicKey, string PrivateKey) GenerateRsaKeyPair()
         {
             using var rsa = RSA.Create(2048);
@@ -23,7 +22,6 @@ namespace Server.Security
             );
         }
 
-        // Encrypt private key
         public string EncryptPrivateKey(string privateKey, string password)
         {
             using var deriveBytes = new Rfc2898DeriveBytes(password, Encoding.UTF8.GetBytes("TrustMessageApp"), 10000);
@@ -38,7 +36,6 @@ namespace Server.Security
             return Convert.ToBase64String(encryptedBytes);
         }
 
-        // Decrypt private key
         public string DecryptPrivateKey(string encryptedPrivateKey, string password)
         {
             using var deriveBytes = new Rfc2898DeriveBytes(password, Encoding.UTF8.GetBytes("TrustMessageApp"), 10000);
@@ -53,7 +50,6 @@ namespace Server.Security
             return Encoding.UTF8.GetString(decryptedBytes);
         }
 
-        // Sign data
         public string SignData(string data, string privateKey)
         {
             using var rsa = RSA.Create();
@@ -65,7 +61,6 @@ namespace Server.Security
             return Convert.ToBase64String(signatureBytes);
         }
 
-        // Verify data
         public bool VerifyData(string data, string signature, string publicKey)
         {
             using var rsa = RSA.Create();

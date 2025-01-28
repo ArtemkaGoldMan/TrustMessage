@@ -15,12 +15,26 @@ export default function ChangePasswordPage() {
     setError('');
     setSuccess(false);
 
+    if (!username.trim() || !twoFactorCode.trim() || !newPassword.trim()) {
+      setError('All fields are required');
+      return;
+    }
+
     try {
       await changePassword({ username, twoFactorCode, newPassword });
       setSuccess(true);
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
-      setError(err.message);
+      console.log('Password change error:', err);
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => messages)
+          .flat()
+          .join('\n');
+        setError(errorMessages);
+      } else {
+        setError(err.response?.data?.message || 'Failed to change password');
+      }
     }
   };
 
@@ -55,7 +69,13 @@ export default function ChangePasswordPage() {
             required
           />
         </div>
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <div className="error">
+            {error.split('\n').map((line, index) => (
+              <div key={index}>{line}</div>
+            ))}
+          </div>
+        )}
         {success && <div className="success">Password changed successfully! Redirecting...</div>}
         <button type="submit">Change Password</button>
       </form>

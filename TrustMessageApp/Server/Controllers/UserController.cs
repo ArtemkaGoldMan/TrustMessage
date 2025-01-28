@@ -7,7 +7,7 @@ using Server.Security;
 
 namespace Server.Controllers
 {
-    [Authorize] // Ensure only authenticated users can access these endpoints
+    [Authorize] 
     [Route("api/user")]
     [ApiController]
     public class UserController : ControllerBase
@@ -21,7 +21,6 @@ namespace Server.Controllers
             _authService = authService;
         }
 
-        // Find user by username
         [HttpGet("find/{username}")]
         public async Task<IActionResult> FindUser(string username)
         {
@@ -29,7 +28,6 @@ namespace Server.Controllers
             if (user == null)
                 return NotFound("User not found");
 
-            // Return minimal user information (avoid exposing sensitive data)
             return Ok(new
             {
                 user.Username,
@@ -37,23 +35,19 @@ namespace Server.Controllers
             });
         }
 
-        // Change password
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Validate the 2FA code
             bool twoFactorValid = await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode);
             if (!twoFactorValid)
                 return Unauthorized("Invalid request");
 
-            // Check if the new password is strong enough
             if (!PasswordStrengthChecker.IsPasswordStrong(request.NewPassword))
                 return BadRequest("New password is not strong enough");
 
-            // Update the password
             bool passwordChanged = await _userService.UpdatePasswordAsync(request.Username, request.NewPassword);
             if (!passwordChanged)
                 return NotFound("User not found");

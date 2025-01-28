@@ -23,10 +23,8 @@ namespace Server.Services.Implementations
             if (await _context.Users.AnyAsync(u => u.Username == request.Username))
                 return null;
 
-            // Generate RSA key pair using KeyManager
             var (publicKey, privateKey) = _keyManager.GenerateRsaKeyPair();
 
-            // Encrypt the private key using the user's password
             string encryptedPrivateKey = _keyManager.EncryptPrivateKey(privateKey, request.Password);
 
             var hashedPassword = PBKDF2Hasher.HashPassword(request.Password);
@@ -38,7 +36,7 @@ namespace Server.Services.Implementations
                 Email = request.Email,
                 PasswordHash = hashedPassword,
                 PublicKey = publicKey,
-                PrivateKey = encryptedPrivateKey, // Store the encrypted private key
+                PrivateKey = encryptedPrivateKey,
                 TwoFactorSecret = secretKey
             };
 
@@ -53,13 +51,11 @@ namespace Server.Services.Implementations
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
             if (user == null) return false;
 
-            // Check if the user is currently locked out
             if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
             {
                 throw new Exception($"Your account is locked until {user.LockoutEnd.Value.ToLocalTime()}. Please try again later.");
             }
 
-            // If the lockout period has expired, reset the lockout
             if (user.LockoutEnd.HasValue && user.LockoutEnd <= DateTime.UtcNow)
             {
                 user.LockoutEnd = null;
@@ -73,20 +69,19 @@ namespace Server.Services.Implementations
 
                 if (user.FailedLoginAttempts >= 5)
                 {
-                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15); // Lock the user for 15 minutes
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
                     await _context.SaveChangesAsync();
                     throw new Exception("Your account has been locked due to multiple failed login attempts. Please try again later.");
                 }
                 else
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(2)); // Small delay to mitigate brute-force attacks
+                    await Task.Delay(TimeSpan.FromSeconds(2));
                 }
 
                 await _context.SaveChangesAsync();
                 return false;
             }
 
-            // Successful login - reset failed attempts
             user.FailedLoginAttempts = 0;
             user.LockoutEnd = null;
             await _context.SaveChangesAsync();

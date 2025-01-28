@@ -23,7 +23,6 @@ namespace Server.Security
             // Convert Markdown to HTML
             var html = Markdown.ToHtml(content, pipeline);
             
-            // Configure sanitizer with strict rules
             var sanitizer = new HtmlSanitizer();
             
             // Allow basic formatting tags
@@ -43,7 +42,6 @@ namespace Server.Security
             sanitizer.AllowedAttributes.Clear();
             sanitizer.AllowedAttributes.Add("href");
             
-            // Add URL validation
             sanitizer.RemovingAttribute += (s, e) => 
             {
                 if (e.Attribute.Name == "href" && 
@@ -61,11 +59,9 @@ namespace Server.Security
 
         private static bool IsValidUrl(string url)
         {
-            // Validate URL format
             if (!urlRegex.IsMatch(url))
                 return false;
 
-            // Only allow http and https protocols
             if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {

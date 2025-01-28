@@ -55,13 +55,11 @@ namespace Server.Services.Implementations
             if (user == null)
                 throw new Exception("User not found");
 
-            // Verify password first
             if (!PBKDF2Hasher.VerifyPassword(request.Password, user.PasswordHash))
             {
                 throw new Exception("Invalid password");
             }
 
-            // Sanitize the message content
             var sanitizedContent = MessageSanitizer.Sanitize(request.Content);
 
             var decryptedPrivateKey = _keyManager.DecryptPrivateKey(user.PrivateKey, request.Password);

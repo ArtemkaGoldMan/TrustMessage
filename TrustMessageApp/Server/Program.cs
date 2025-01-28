@@ -30,14 +30,14 @@ builder.Services.AddCors(options =>
     options.AddPolicy("WebClient",
         builder =>
         {
-            builder.WithOrigins("https://localhost:5173") // Update to your frontend URL
+            builder.WithOrigins("https://localhost:5173") 
                    .AllowAnyHeader()
                    .AllowAnyMethod()
                    .AllowCredentials();
         });
 });
 
-// Add other services...
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure Swagger to support cookie authentication
@@ -80,7 +80,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<IMessageService, MessageService>();
 
-// Add in-memory distributed cache (for development only)
+// Add in-memory distributed cache
 builder.Services.AddDistributedMemoryCache();
 
 // Add session support
@@ -119,19 +119,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
     });
 
-// Add this to your services configuration
 builder.Services.AddSingleton<KeyManager>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "TrustMessageApp API V1");
-        c.ConfigObject.AdditionalItems["persistAuthorization"] = true; // Persist authorization across Swagger sessions
+        c.ConfigObject.AdditionalItems["persistAuthorization"] = true; 
     });
 }
 

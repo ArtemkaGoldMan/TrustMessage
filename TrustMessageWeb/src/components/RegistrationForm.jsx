@@ -19,23 +19,37 @@ export default function RegistrationForm({ onRegistrationSuccess }) {
     setSecretKey('');
     setIsLoading(true);
 
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setError('All fields are required');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await register(username, email, password);
       const extractedSecretKey = response.qrCodeUri.split('secret=')[1]?.split('&')[0];
       setSecretKey(extractedSecretKey || '');
       
-      // Try to generate QR code, but show secret key regardless
       QRCode.toDataURL(response.qrCodeUri, { errorCorrectionLevel: 'H' }, (err, url) => {
         setIsLoading(false);
         if (err) {
-          console.warn('QR Code generation failed, showing secret key only');
+          setError('Failed to generate QR code, but registration was successful. Please use the secret key.');
         }
         setQrCodeDataUrl(url || '');
         setRegistrationComplete(true);
       });
     } catch (err) {
       setIsLoading(false);
-      setError(err.message);
+      console.log('Registration error:', err); // For debugging
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => messages)
+          .flat()
+          .join('\n');
+        setError(errorMessages);
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     }
   };
 
@@ -72,7 +86,13 @@ export default function RegistrationForm({ onRegistrationSuccess }) {
   return (
     <div className="auth-form">
       <h2>Register for TrustMessage</h2>
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          {error.split('\n').map((line, index) => (
+            <div key={index}>{line}</div>
+          ))}
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Username:</label>

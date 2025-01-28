@@ -38,12 +38,18 @@ namespace Server.Controllers
         public async Task<IActionResult> CreateMessage([FromBody] CreateMessageDTO request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { message = "Invalid form data", errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)) });
 
-            var username = User.FindFirstValue(ClaimTypes.Name);
-            var message = await _messageService.CreateMessageAsync(username, request);
-
-            return Ok(message);
+            try 
+            {
+                var username = User.FindFirstValue(ClaimTypes.Name);
+                var message = await _messageService.CreateMessageAsync(username, request);
+                return Ok(message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

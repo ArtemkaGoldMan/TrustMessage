@@ -22,11 +22,11 @@ namespace Server.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequestDTO request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { message = "Invalid form data", errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)) });
 
             var qrCodeUri = await _authService.RegisterAsync(request);
             if (qrCodeUri == null)
-                return BadRequest("Registration failed");
+                return BadRequest(new { message = "Username already exists" });
 
             return Ok(new { message = "Registration successful", qrCodeUri });
         }
@@ -35,14 +35,19 @@ namespace Server.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { message = "Invalid form data", errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)) });
 
             try
             {
                 bool userValid = await _authService.ValidateUserAsync(request);
+                if (!userValid)
+                {
+                    return Unauthorized(new { message = "Invalid username or password" });
+                }
+
                 bool twoFactorValid = await _authService.ValidateTwoFactorCodeAsync(request.Username, request.TwoFactorCode);
 
-                if (!userValid || !twoFactorValid)
+                if (!twoFactorValid)
                 {
                     return Unauthorized(new { message = "Invalid login attempt" });
                 }
@@ -60,6 +65,7 @@ namespace Server.Controllers
                     AllowRefresh = true
                 };
 
+                // Sign in the user and create the authentication cookie
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
@@ -74,9 +80,9 @@ namespace Server.Controllers
             {
                 if (ex.Message.Contains("locked"))
                 {
-                    return Unauthorized(new { message = "Your account is locked. Please try again later." });
+                    return Unauthorized(new { message = ex.Message });
                 }
-                return Unauthorized(new { message = "Invalid login attempt" });
+                return Unauthorized(new { message = "Login failed. Please try again." });
             }
         }
 

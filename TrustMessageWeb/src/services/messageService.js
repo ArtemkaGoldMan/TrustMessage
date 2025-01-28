@@ -22,23 +22,31 @@ export const getUserMessages = async () => {
   return response.json();
 };
 
-export const createMessage = async (message) => {
-  const response = await fetch('/api/messages', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      ...message,
-      content: message.content // Server will handle sanitization
-    })
-  });
+export const createMessage = async (messageData) => {
+  try {
+    const response = await fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messageData),
+      credentials: 'include'
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to create message');
+    if (!response.ok) {
+      const errorData = await response.json();
+      const error = new Error('Failed to create message');
+      error.response = { data: errorData };
+      throw error;
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error.response) {
+      throw error;
+    }
+    const newError = new Error(error.message);
+    newError.response = { data: { message: error.message } };
+    throw newError;
   }
-
-  return response.json();
 }; 

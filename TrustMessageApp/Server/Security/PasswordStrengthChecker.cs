@@ -19,7 +19,7 @@
 
         public static bool IsPasswordStrong(string password)
         {
-            return CalculateEntropy(password) >= 50; // NIST recommends at least 50 bits of entropy for user passwords
+            return CalculateEntropy(password) >= 60; 
         }
     }
 }

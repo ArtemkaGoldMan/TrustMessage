@@ -5,7 +5,6 @@ namespace Server.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        // Add this constructor
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
@@ -15,7 +14,6 @@ namespace Server.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Define unique constraints and relationships
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.Id);

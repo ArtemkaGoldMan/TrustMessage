@@ -13,6 +13,6 @@ namespace BaseLibrary.DTOs
         public string Content { get; set; } = string.Empty;
         public string Signature { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public bool IsVerified { get; set; }
+        public bool IsVerified { get; set; } //checked during request for showing messages
     }
 }

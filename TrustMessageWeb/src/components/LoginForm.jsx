@@ -11,18 +11,38 @@ export default function LoginForm({ onLoginSuccess }) {
     e.preventDefault();
     setError('');
 
+    if (!username.trim() || !password.trim() || !twoFactorCode.trim()) {
+      setError('All fields are required');
+      return;
+    }
+
     try {
       await login(username, password, twoFactorCode);
       onLoginSuccess();
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      console.log('Login error:', err);
+      if (err.response?.data?.errors) {
+        const errorMessages = Object.entries(err.response.data.errors)
+          .map(([field, messages]) => messages)
+          .flat()
+          .join('\n');
+        setError(errorMessages);
+      } else {
+        setError(err.response?.data?.message || 'Login failed');
+      }
     }
   };
 
   return (
     <div className="auth-form">
       <h2>Login to TrustMessage</h2>
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          {error.split('\n').map((line, index) => (
+            <div key={index}>{line}</div>
+          ))}
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Username:</label>
