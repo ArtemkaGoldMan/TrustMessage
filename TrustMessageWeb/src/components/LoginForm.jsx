@@ -20,36 +20,39 @@ export default function LoginForm({ onLoginSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div className="auth-form">
+      <h2>Login to TrustMessage</h2>
       {error && <div className="error">{error}</div>}
-      <div>
-        <label>Username:</label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label>Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label>2FA Code:</label>
-        <input
-          type="text"
-          value={twoFactorCode}
-          onChange={(e) => setTwoFactorCode(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit">Login</button>
-    </form>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Username:</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>Password:</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>Two-Factor Code:</label>
+          <input
+            type="text"
+            value={twoFactorCode}
+            onChange={(e) => setTwoFactorCode(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit" className="auth-button">Login</button>
+      </form>
+    </div>
   );
 } 

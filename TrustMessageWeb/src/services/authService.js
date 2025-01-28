@@ -64,4 +64,21 @@ export const register = async (username, email, password) => {
   }
 
   return response.json();
+};
+
+export const changePassword = async (data) => {
+  const response = await fetch('/api/user/change-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to change password');
+  }
+
+  return response.json();
 }; 
