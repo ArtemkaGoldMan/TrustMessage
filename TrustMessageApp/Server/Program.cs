@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Server.Data;
-using Server.Hubs;
 using Server.Services.Implementations;
 using Server.Services.Interfaces;
 using Server.Validations;
@@ -28,10 +27,10 @@ builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrateg
 // Add CORS policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowBlazorApp",
+    options.AddPolicy("WebClient",
         builder =>
         {
-            builder.WithOrigins("https://localhost:7281") // Replace with your Blazor app's URL
+            builder.WithOrigins("https://localhost:5173") // Update to your frontend URL
                    .AllowAnyHeader()
                    .AllowAnyMethod()
                    .AllowCredentials();
@@ -80,7 +79,6 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddSignalR();
 
 // Add in-memory distributed cache (for development only)
 builder.Services.AddDistributedMemoryCache();
@@ -100,10 +98,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-        options.LoginPath = "/api/auth/login"; // Redirect to login if unauthorized
-        options.AccessDeniedPath = "/api/auth/access-denied"; // Redirect if access is denied
+        options.LoginPath = "/api/auth/login";
+        options.LogoutPath = "/api/auth/logout";
+        options.AccessDeniedPath = "/api/auth/access-denied";
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            },
+            OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // Add this to your services configuration
@@ -122,13 +135,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCors("AllowBlazorApp");
+app.UseCors("WebClient");
 
 // Enable rate limiting middleware
 app.UseIpRateLimiting();
-
-// Enable SignalR
-app.MapHub<MessageHub>("/messageHub");
 
 // Serve static files from wwwroot
 app.UseStaticFiles();

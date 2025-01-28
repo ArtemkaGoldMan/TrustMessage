@@ -31,16 +31,9 @@ namespace Server.Controllers
             return Ok(new { message = "Registration successful", qrCodeUri });
         }
 
-        [HttpGet("login")]
-        public async Task<IActionResult> LoginForSwagger([FromQuery] string username, [FromQuery] string password, [FromQuery] string twoFactorCode)
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
         {
-            var request = new LoginRequestDTO
-            {
-                Username = username,
-                Password = password,
-                TwoFactorCode = twoFactorCode
-            };
-
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -51,20 +44,20 @@ namespace Server.Controllers
 
                 if (!userValid || !twoFactorValid)
                 {
-                    return Unauthorized("Invalid login attempt");
+                    return Unauthorized(new { message = "Invalid login attempt" });
                 }
 
-                // Create the authentication cookie
                 var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, request.Username)
-        };
+                {
+                    new Claim(ClaimTypes.Name, request.Username)
+                };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30),
+                    AllowRefresh = true
                 };
 
                 await HttpContext.SignInAsync(
@@ -72,15 +65,18 @@ namespace Server.Controllers
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                return Ok(new { message = "Login successful" });
+                return Ok(new { 
+                    message = "Login successful",
+                    username = request.Username
+                });
             }
             catch (Exception ex)
             {
                 if (ex.Message.Contains("locked"))
                 {
-                    return Unauthorized("Your account is locked. Please try again later.");
+                    return Unauthorized(new { message = "Your account is locked. Please try again later." });
                 }
-                return Unauthorized("Invalid login attempt");
+                return Unauthorized(new { message = "Invalid login attempt" });
             }
         }
 
@@ -95,11 +91,17 @@ namespace Server.Controllers
         [HttpGet("check")]
         public IActionResult Check()
         {
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity?.IsAuthenticated == true)
             {
-                return Ok();
+                return Ok(new { 
+                    isAuthenticated = true, 
+                    username = User.Identity.Name 
+                });
             }
-            return Unauthorized();
+            return Unauthorized(new { 
+                isAuthenticated = false,
+                message = "Not authenticated"
+            });
         }
     }
 }

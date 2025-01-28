@@ -16,19 +16,35 @@ function App() {
   const [showRegistration, setShowRegistration] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    let timeoutId = null;
+
     const verifyAuth = async () => {
       try {
-        await checkAuth();
-        setIsAuthenticated(true);
+        const result = await checkAuth();
+        if (mounted) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        }
       } catch (err) {
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+        }
       }
     };
 
     verifyAuth();
+
+    return () => {
+      mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -60,7 +76,7 @@ function App() {
                 </>
               ) : (
                 <>
-                  <LoginForm onLoginSuccess={() => setIsAuthenticated(true)} />
+                  <LoginForm onLoginSuccess={handleLoginSuccess} />
                   <div className="auth-switch-button">
                     <button onClick={() => setShowRegistration(true)}>
                       Don't have an account? Register

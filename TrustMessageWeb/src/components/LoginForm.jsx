@@ -14,8 +14,8 @@ export default function LoginForm({ onLoginSuccess }) {
     try {
       await login(username, password, twoFactorCode);
       onLoginSuccess();
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setError(error.message);
     }
   };
 

@@ -2,10 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Server.Services.Interfaces;
 using System.Security.Claims;
-using Server.Hubs;
 
 namespace Server.Controllers
 {
@@ -15,12 +13,10 @@ namespace Server.Controllers
     public class MessageController : ControllerBase
     {
         private readonly IMessageService _messageService;
-        private readonly IHubContext<MessageHub> _hubContext;
 
-        public MessageController(IMessageService messageService, IHubContext<MessageHub> hubContext)
+        public MessageController(IMessageService messageService)
         {
             _messageService = messageService;
-            _hubContext = hubContext;
         }
 
         [HttpGet("all")]
@@ -46,8 +42,6 @@ namespace Server.Controllers
 
             var username = User.FindFirstValue(ClaimTypes.Name);
             var message = await _messageService.CreateMessageAsync(username, request);
-
-            await _hubContext.Clients.All.SendAsync("ReceiveMessage", message.Username, message.Content);
 
             return Ok(message);
         }
