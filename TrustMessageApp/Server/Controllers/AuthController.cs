@@ -91,5 +91,15 @@ namespace Server.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok(new { message = "Logout successful" });
         }
+
+        [HttpGet("check")]
+        public IActionResult Check()
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                return Ok();
+            }
+            return Unauthorized();
+        }
     }
 }

@@ -1,0 +1,44 @@
+@page "/login"
+@using BaseLibrary.DTOs
+@using WebClient.Services
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+@inject CustomAuthStateProvider AuthStateProvider
+
+<h3>Login</h3>
+
+<EditForm Model="@loginRequest" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label>Username</label>
+        <InputText @bind-Value="loginRequest.Username" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Password</label>
+        <InputText type="password" @bind-Value="loginRequest.Password" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>2FA Code</label>
+        <InputText @bind-Value="loginRequest.TwoFactorCode" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@code {
+    private LoginRequestDTO loginRequest = new();
+
+    private async Task HandleLogin()
+    {
+        var success = await AuthService.LoginAsync(loginRequest);
+        if (success)
+        {
+            AuthStateProvider.NotifyUserAuthentication();
+            Navigation.NavigateTo("/");
+        }
+    }
+} 

@@ -24,6 +24,20 @@ builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounte
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
 
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowBlazorApp",
+        builder =>
+        {
+            builder.WithOrigins("https://localhost:7281") // Replace with your Blazor app's URL
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowCredentials();
+        });
+});
+
 // Add other services...
 builder.Services.AddEndpointsApiExplorer();
 
@@ -107,6 +121,8 @@ if (app.Environment.IsDevelopment())
         c.ConfigObject.AdditionalItems["persistAuthorization"] = true; // Persist authorization across Swagger sessions
     });
 }
+
+app.UseCors("AllowBlazorApp");
 
 // Enable rate limiting middleware
 app.UseIpRateLimiting();
