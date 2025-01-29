@@ -1,0 +1,63 @@
+services:
+  nginx:
+    container_name: trustmessage-nginx-1
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./TrustMessageWeb/cert.pem:/etc/nginx/ssl/cert.pem:ro
+      - ./TrustMessageWeb/key.pem:/etc/nginx/ssl/key.pem:ro
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    container_name: trustmessage-frontend-1
+    build:
+      context: ./TrustMessageWeb
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+
+  backend:
+    container_name: trustmessage-backend-1
+    build:
+      context: ./TrustMessageApp
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:5000
+      - MASTER_KEY=your-secure-key-here
+      - MASTER_IV=your-secure-iv-here
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  db:
+    container_name: trustmessage-db-1
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
+      - MSSQL_DATA_DIR=/var/opt/mssql/data
+      - MSSQL_LOG_DIR=/var/opt/mssql/log
+      - MSSQL_BACKUP_DIR=/var/opt/mssql/backup
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong!Passw0rd" -Q "SELECT 1" -C -N || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# Add this volumes section at the root level
+volumes:
+  sqldata:
