@@ -10,8 +10,6 @@ GO
 USE TrustMessageDb;
 GO
 
--- Rest of your table creation scripts...
-
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Users' AND type = 'U')
 BEGIN
     CREATE TABLE Users (

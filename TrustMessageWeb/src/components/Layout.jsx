@@ -20,7 +20,7 @@ export default function Layout() {
   const handleLogout = async () => {
     try {
       await logout();
-      window.location.href = '/'; // Redirect to home page after logout
+      window.location.href = '/'; 
     } catch (err) {
       console.error('Logout failed:', err);
     }

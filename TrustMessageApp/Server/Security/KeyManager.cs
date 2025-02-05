@@ -24,7 +24,12 @@ namespace Server.Security
 
         public string EncryptPrivateKey(string privateKey, string password)
         {
-            using var deriveBytes = new Rfc2898DeriveBytes(password, Encoding.UTF8.GetBytes("TrustMessageApp"), 10000);
+            using var deriveBytes = new Rfc2898DeriveBytes(
+                password, 
+                Encoding.UTF8.GetBytes("TrustMessageApp"), 
+                10000, 
+                HashAlgorithmName.SHA256
+            );
             using var aes = Aes.Create();
             aes.Key = deriveBytes.GetBytes(32); // 256-bit key
             aes.IV = deriveBytes.GetBytes(16);  // 128-bit IV
@@ -38,7 +43,12 @@ namespace Server.Security
 
         public string DecryptPrivateKey(string encryptedPrivateKey, string password)
         {
-            using var deriveBytes = new Rfc2898DeriveBytes(password, Encoding.UTF8.GetBytes("TrustMessageApp"), 10000);
+            using var deriveBytes = new Rfc2898DeriveBytes(
+                password, 
+                Encoding.UTF8.GetBytes("TrustMessageApp"), 
+                10000, 
+                HashAlgorithmName.SHA256
+            );
             using var aes = Aes.Create();
             aes.Key = deriveBytes.GetBytes(32); // 256-bit key
             aes.IV = deriveBytes.GetBytes(16);  // 128-bit IV

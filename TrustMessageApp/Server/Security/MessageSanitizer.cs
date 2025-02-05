@@ -34,8 +34,6 @@ namespace Server.Security
             sanitizer.AllowedTags.Add("ol");
             sanitizer.AllowedTags.Add("li");
             sanitizer.AllowedTags.Add("blockquote");
-            sanitizer.AllowedTags.Add("code");
-            sanitizer.AllowedTags.Add("pre");
             sanitizer.AllowedTags.Add("a");
             
             // Configure allowed attributes
