@@ -2,7 +2,6 @@ FROM mcr.microsoft.com/mssql/server:2022-latest
 
 USER root
 
-# Install sqlcmd properly
 RUN apt-get update && \
     apt-get install -y curl gnupg2 && \
     curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
@@ -12,12 +11,10 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Add sqlcmd to PATH
 ENV PATH="${PATH}:/opt/mssql-tools18/bin"
 
 USER mssql
 
 COPY setup.sql /setup.sql
 
-# Using JSON format for CMD
 CMD ["/bin/bash", "-c", "/opt/mssql/bin/sqlservr & sleep 30 && /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -i /setup.sql -C -N && sleep infinity"]
